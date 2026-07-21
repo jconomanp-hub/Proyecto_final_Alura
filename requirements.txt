@@ -1,0 +1,11 @@
+langchain-core
+langchain-google-genai
+langchain-community
+faiss-cpu
+pypdf
+langgraph
+langgraph-cli[inmem]
+streamlit
+langchain
+langchain-huggingface
+sentence-transformers
