@@ -71,6 +71,15 @@ El archivo `app_streamlit.py` usa la clave de Gemini de manera segura desde:
 
 No se debe dejar la API key embebida en el código fuente.
 
+Ejemplo de `secrets.toml` para Streamlit:
+
+```toml
+GEMINI_API_KEY = "tu_api_key_gemini"
+GEMINI_CHAT_MODEL = "gemini-2.5-flash"
+```
+
+Esto permite mantener la configuración sensible fuera del repositorio y ajustar el modelo desde la interfaz.
+
 ---
 
 ## 🧪 Pruebas

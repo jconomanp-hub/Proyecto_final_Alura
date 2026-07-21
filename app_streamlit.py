@@ -58,6 +58,13 @@ st.sidebar.markdown(
     "Puedes ajustar el modelo con la variable de entorno `GEMINI_CHAT_MODEL`."
 )
 
+st.sidebar.markdown(
+    "### Streamlit Secrets\n"
+    "Puedes definir `GEMINI_API_KEY` (y opcionalmente `GEMINI_CHAT_MODEL`) en `st.secrets`:\n"
+    "```toml\nGEMINI_API_KEY = \"tu_api_key_gemini\"\nGEMINI_CHAT_MODEL = \"gemini-2.5-flash\"\n```\n"
+    "Esto evita exponer claves en el código o en el control de versiones."
+)
+
 
 # STREAMING_CHUNK:Processing uploaded PDF and generating vector store...
 @st.cache_resource
