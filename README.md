@@ -48,6 +48,7 @@ Variables de entorno recomendadas:
 - `PDF_PATH` → Ruta del PDF a procesar (por defecto `futureapplication.pdf`).
 - `GEMINI_CHAT_MODEL` → Modelo de chat, por ejemplo `gemini-2.5-flash`.
 - `GEMINI_EMBEDDING_MODEL` → Modelo de embeddings, por ejemplo `gemini-embedding-001`.
+- `GEMINI_API_KEY` → Clave de Gemini usada por `app_streamlit.py` cuando se ejecuta la interfaz Streamlit.
 
 Ejemplo `.env`:
 
@@ -56,7 +57,17 @@ GOOGLE_API_KEY=tu_api_key
 PDF_PATH=futureapplication.pdf
 GEMINI_CHAT_MODEL=gemini-2.5-flash
 GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+GEMINI_API_KEY=tu_api_key_gemini
 ```
+
+### Configuración segura en Streamlit
+
+El archivo `app_streamlit.py` usa la clave de Gemini de manera segura desde:
+- `GEMINI_API_KEY` en variables de entorno,
+- `st.secrets["GEMINI_API_KEY"]`,
+- o ingreso manual en la barra lateral de Streamlit.
+
+No se debe dejar la API key embebida en el código fuente.
 
 ---
 
@@ -80,6 +91,7 @@ c:/Users/JuanCoñomanPeralta/proyecto_alura/venv/Scripts/python.exe -m unittest 
 
 - `agent.py` → Define el grafo de `langgraph`, la lógica RAG y el fallback local.
 - `app.py` → (opcional) punto de entrada adicional para la aplicación.
+- `app_streamlit.py` → Interfaz Streamlit para consulta interactiva.
 - `README.md` → Documentación del proyecto.
 - `requirements.txt` → Dependencias del proyecto.
 - `tests/test_agent.py` → Pruebas unitarias del fallback y la inicialización.
@@ -103,6 +115,14 @@ Si `langgraph` está instalado:
 ```bash
 langgraph dev
 ```
+
+Para ejecutar la interfaz Streamlit:
+
+```bash
+streamlit run app_streamlit.py
+```
+
+Asegúrate de tener definida `GEMINI_API_KEY` en el entorno o en los secretos de Streamlit.
 
 Para usar el agente directamente desde Python:
 
