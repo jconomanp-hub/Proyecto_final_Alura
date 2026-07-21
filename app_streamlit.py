@@ -1,5 +1,6 @@
 # STREAMING_CHUNK:Initializing Streamlit app and configuration...
 import os
+import tempfile
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
@@ -12,9 +13,12 @@ st.set_page_config(
 )
 
 st.title("🤖 Asistente RAG Corporativo con Gemini")
-st.markdown("Consulta inteligente sobre `futureapplication.pdf`")
+st.markdown(
+    "Sube tu documento PDF o usa el predeterminado para realizar consultas"
+    " inteligentes."
+)
 
-# Configurar API Key desde Streamlit Secrets, variable de entorno o la barra lateral
+# Configurar API Key
 api_key = os.getenv("GEMINI_API_KEY")
 try:
   if not api_key and "GEMINI_API_KEY" in st.secrets:
@@ -22,7 +26,6 @@ try:
 except Exception:
   pass
 
-# Barra lateral para ingresar la clave si no está definida
 with st.sidebar:
   st.header("⚙️ Configuración")
   input_key = st.text_input(
@@ -34,28 +37,28 @@ with st.sidebar:
     api_key = input_key
     os.environ["GEMINI_API_KEY"] = api_key
 
-if not api_key:
-  st.warning(
-      "⚠️ Por favor, ingresa tu API Key de Gemini en la barra lateral o define"
-      " la variable de entorno GEMINI_API_KEY."
+  st.divider()
+  st.subheader("📄 Cargar Documento")
+  uploaded_file = st.file_uploader(
+      "Sube tu PDF (ej. futureapplication.pdf)", type=["pdf"]
   )
+
+if not api_key:
+  st.warning("⚠️ Por favor, ingresa tu API Key de Gemini en la barra lateral.")
   st.stop()
 else:
   os.environ["GEMINI_API_KEY"] = api_key
 
-# STREAMING_CHUNK:Loading PDF document and setting up retriever...
-@st.cache_resource
-def inicializar_rag():
-  # Verificar si el PDF existe localmente
-  pdf_path = "futureapplication.pdf"
-  if not os.path.exists(pdf_path):
-    st.error(
-        f"❌ No se encontró el archivo '{pdf_path}' en el repositorio de GitHub."
-        " Asegúrate de subirlo."
-    )
-    st.stop()
 
-  loader = PyPDFLoader(pdf_path)
+# STREAMING_CHUNK:Processing uploaded PDF and generating vector store...
+@st.cache_resource
+def inicializar_rag_desde_archivo(file_bytes_io, filename):
+  # Guardar temporalmente el archivo subido para que PyPDFLoader pueda leerlo
+  with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+    tmp_file.write(file_bytes_io.read())
+    tmp_path = tmp_file.name
+
+  loader = PyPDFLoader(tmp_path)
   documentos = loader.load()
   text_splitter = RecursiveCharacterTextSplitter(
       chunk_size=1000, chunk_overlap=200
@@ -67,14 +70,36 @@ def inicializar_rag():
   return vector_store.as_retriever(search_kwargs={"k": 3})
 
 
-try:
-  retriever = inicializar_rag()
-  llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)
-except Exception as e:
-  st.error(f"Error inicializando el RAG: {e}")
+# Determinar qué archivo usar (el subido por el usuario o buscar localmente)
+target_file = None
+file_name_display = ""
+
+if uploaded_file is not None:
+  target_file = uploaded_file
+  file_name_display = uploaded_file.name
+elif os.path.exists("futureapplication.pdf"):
+  target_file = open("futureapplication.pdf", "rb")
+  file_name_display = "futureapplication.pdf"
+
+if target_file is None:
+  st.info(
+      "👈 Por favor, **sube tu archivo PDF** en la barra lateral para comenzar a"
+      " chatear con el agente."
+  )
   st.stop()
 
-# STREAMING_CHUNK:Rendering chat interface and conversation history...
+st.success(f"✅ Documento activo: **{file_name_display}**")
+
+try:
+  retriever = inicializar_rag_desde_archivo(target_file, file_name_display)
+  # Corrección del modelo a gemini-1.5-flash (modelo activo estándar)
+  llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
+except Exception as e:
+  st.error(f"Error procesando el PDF: {e}")
+  st.stop()
+
+
+# STREAMING_CHUNK:Rendering chat UI and message loop...
 if "messages" not in st.session_state:
   st.session_state.messages = []
 
@@ -105,5 +130,4 @@ if query := st.chat_input("Escribe tu pregunta sobre el documento..."):
             {"role": "assistant", "content": response.content}
         )
       except Exception as e:
-        error_msg = f"Ocurrió un error al procesar la consulta: {e}"
-        st.error(error_msg)
+        st.error(f"Ocurrió un error al procesar la consulta: {e}")
