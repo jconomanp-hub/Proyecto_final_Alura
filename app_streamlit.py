@@ -1,5 +1,6 @@
 # STREAMING_CHUNK:Initializing Streamlit app and configuration...
 import os
+import re
 import tempfile
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
@@ -7,6 +8,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+fallback_pdf_path = None
 
 st.set_page_config(
     page_title="Agente RAG Corporativo", page_icon="🤖", layout="centered"
@@ -59,10 +62,12 @@ st.sidebar.markdown(
 # STREAMING_CHUNK:Processing uploaded PDF and generating vector store...
 @st.cache_resource
 def inicializar_rag_desde_archivo(file_bytes_io, filename):
+  global fallback_pdf_path
   # Guardar temporalmente el archivo subido para que PyPDFLoader pueda leerlo
   with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
     tmp_file.write(file_bytes_io.read())
     tmp_path = tmp_file.name
+    fallback_pdf_path = tmp_path
 
   loader = PyPDFLoader(tmp_path)
   documentos = loader.load()
@@ -76,6 +81,19 @@ def inicializar_rag_desde_archivo(file_bytes_io, filename):
   return vector_store.as_retriever(search_kwargs={"k": 3})
 
 
+def _fallback_answer(query: str, error_text: str) -> str | None:
+  try:
+    import agent
+    if fallback_pdf_path:
+      agent.FILE_PATH = fallback_pdf_path
+      agent.document_chunks = []
+      agent.document_sentences = []
+      agent.initialization_error = None
+    return agent._keyword_fallback_answer(query, error_text)
+  except Exception:
+    return None
+
+
 # Determinar qué archivo usar (el subido por el usuario o buscar localmente)
 target_file = None
 file_name_display = ""
@@ -86,6 +104,7 @@ if uploaded_file is not None:
 elif os.path.exists("futureapplication.pdf"):
   target_file = open("futureapplication.pdf", "rb")
   file_name_display = "futureapplication.pdf"
+  fallback_pdf_path = "futureapplication.pdf"
 
 if target_file is None:
   st.info(
@@ -136,4 +155,15 @@ if query := st.chat_input("Escribe tu pregunta sobre el documento..."):
             {"role": "assistant", "content": response.content}
         )
       except Exception as e:
-        st.error(f"Ocurrió un error al procesar la consulta: {e}")
+        error_msg = str(e)
+        fallback_text = _fallback_answer(query, error_msg)
+        if fallback_text:
+          st.warning(
+              "Gemini no está disponible. Usando fallback local desde el PDF."
+          )
+          st.markdown(fallback_text)
+          st.session_state.messages.append(
+              {"role": "assistant", "content": fallback_text}
+          )
+        else:
+          st.error(f"Ocurrió un error al procesar la consulta: {e}")
