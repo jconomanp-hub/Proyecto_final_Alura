@@ -60,6 +60,8 @@ GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 GEMINI_API_KEY=tu_api_key_gemini
 ```
 
+> Ejemplo: puedes cambiar el modelo usando `GEMINI_CHAT_MODEL=gemini-2.5-flash` o cualquier modelo válido disponible en tu cuenta.
+
 ### Configuración segura en Streamlit
 
 El archivo `app_streamlit.py` usa la clave de Gemini de manera segura desde:
