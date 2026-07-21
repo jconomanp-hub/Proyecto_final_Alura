@@ -158,12 +158,9 @@ if query := st.chat_input("Escribe tu pregunta sobre el documento..."):
         error_msg = str(e)
         fallback_text = _fallback_answer(query, error_msg)
         if fallback_text:
-          st.warning(
-              "Gemini no está disponible. Usando fallback local desde el PDF."
-          )
           st.markdown(fallback_text)
           st.session_state.messages.append(
               {"role": "assistant", "content": fallback_text}
           )
         else:
-          st.error(f"Ocurrió un error al procesar la consulta: {e}")
+          st.error("Ocurrió un error al procesar la consulta.")
