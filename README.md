@@ -124,6 +124,8 @@ streamlit run app_streamlit.py
 
 Asegúrate de tener definida `GEMINI_API_KEY` en el entorno o en los secretos de Streamlit.
 
+> Si Gemini agota la cuota, la aplicación usa un fallback local para responder desde el PDF sin mostrar detalles técnicos del error.
+
 Para usar el agente directamente desde Python:
 
 ```python
