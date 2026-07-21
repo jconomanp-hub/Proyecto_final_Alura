@@ -49,6 +49,12 @@ if not api_key:
 else:
   os.environ["GEMINI_API_KEY"] = api_key
 
+st.sidebar.markdown(
+    "\n---\n" \
+    "### Modelo Gemini\n" \
+    "Puedes ajustar el modelo con la variable de entorno `GEMINI_CHAT_MODEL`."
+)
+
 
 # STREAMING_CHUNK:Processing uploaded PDF and generating vector store...
 @st.cache_resource
@@ -92,8 +98,8 @@ st.success(f"✅ Documento activo: **{file_name_display}**")
 
 try:
   retriever = inicializar_rag_desde_archivo(target_file, file_name_display)
-  # Corrección del modelo a gemini-1.5-flash (modelo activo estándar)
-  llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
+  model_name = os.getenv("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
+  llm = ChatGoogleGenerativeAI(model=model_name, temperature=0.3)
 except Exception as e:
   st.error(f"Error procesando el PDF: {e}")
   st.stop()
