@@ -155,8 +155,7 @@ if query := st.chat_input("Escribe tu pregunta sobre el documento..."):
             {"role": "assistant", "content": response.content}
         )
       except Exception as e:
-        error_msg = str(e)
-        fallback_text = _fallback_answer(query, error_msg)
+        fallback_text = _fallback_answer(query, None)
         if fallback_text:
           st.markdown(fallback_text)
           st.session_state.messages.append(
